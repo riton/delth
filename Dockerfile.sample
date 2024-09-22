@@ -1,0 +1,17 @@
+FROM golang:1 AS builder
+
+COPY . /src
+
+RUN cd /src && \
+CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o delth .
+
+FROM alpine:latest
+
+COPY --from=builder --chown=root:root --chmod=0755 /src/delth /usr/bin/delth
+COPY --chmod=0755 --chown=root:root ./test-helpers/running-while-loop.sh /running-while-loop.sh
+
+RUN apk add --no-cache -U bash tini
+
+ENTRYPOINT ["/sbin/tini", "--"]
+
+CMD ["/usr/bin/delth", "--", "/running-while-loop.sh"]

@@ -1,0 +1,35 @@
+---
+log:
+  level: debug
+  format: json
+
+# accessLog:
+#   format: json
+#   bufferingSize: 5
+
+providers:
+  swarm:
+    watch: true
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik-main
+    refreshSeconds: 3
+
+  # file:
+  #   directory: /conf.d
+  #   watch: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+ping:
+  entryPoint: web
+
+metrics:
+  prometheus:
+    entryPoint: web
+
+api:
+  dashboard: true
+  insecure: true

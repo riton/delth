@@ -1,0 +1,53 @@
+# docker stack deploy -c stack-app.yml app --with-registry-auth --prune
+version: "3.7"
+
+services:
+  backend:
+    image: 'localhost:5000/delth/sample-app-print-env:latest'
+    healthcheck:
+      test: 'curl -f http://localhost:8069/delth/health?delth.ignoreShuttingDownState=1'
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+    environment:
+      DELTH_BACKEND_HEALTHCHECK_PORT: 80
+      DELTH_BACKEND_HEALTHCHECK_PATH: /health
+      DELTH_CMD_EXEC_SHUTDOWN_DELAY: 20s
+      DUMMY_APP_VERSION_FOR_HUMAN_TO_SEE: 70
+      DELTH_DEBUG: '1'
+    networks:
+      - traefik-main
+    stop_grace_period: 30s
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        monitor: 10s
+        delay: 30s
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 128M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.network=traefik-main"
+        - "traefik.http.routers.myapp.rule=Host(`app.127.0.0.1.nip.io`)"
+        - "traefik.http.routers.myapp.entrypoints=web"
+        - "traefik.http.services.myapp.loadbalancer.server.port=80"
+        - "traefik.http.services.myapp.loadbalancer.healthcheck.port=8069"
+        - "traefik.http.services.myapp.loadbalancer.healthcheck.path=/delth/health"
+        - "traefik.http.services.myapp.loadbalancer.healthcheck.interval=5s"
+        - "traefik.http.services.myapp.loadbalancer.healthcheck.timeout=2s"
+        - "traefik.http.services.myapp.loadbalancer.healthcheck.scheme=http"
+        - "traefik.http.services.myapp.loadbalancer.healthcheck.status=200"
+
+networks:
+  traefik-main:
+    external: true
