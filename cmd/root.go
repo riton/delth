@@ -122,10 +122,11 @@ type healthCheckProxyConfig struct {
 }
 
 type backendHealthCheckConfig struct {
-	Path                  string `mapstructure:"path" validate:"required"`
-	Port                  int    `mapstructure:"port" validate:"required"`
-	Scheme                string `mapstructure:"scheme"`
-	TLSInsecureSkipVerify bool   `mapstructure:"tls-insecure-skip-verify"`
+	Path                  string        `mapstructure:"path" validate:"required"`
+	Port                  int           `mapstructure:"port" validate:"required"`
+	Scheme                string        `mapstructure:"scheme"`
+	TLSInsecureSkipVerify bool          `mapstructure:"tls-insecure-skip-verify"`
+	HTTPTimeout           time.Duration `mapstructure:"timeout"`
 }
 
 type commandExecConfig struct {
@@ -151,7 +152,8 @@ func rootCmdRunE(cmd *cobra.Command, args []string) error {
 	// our default configuration
 	cfg := config{
 		BackendHealthCheck: backendHealthCheckConfig{
-			Scheme: "http",
+			Scheme:      "http",
+			HTTPTimeout: 30 * time.Second,
 		},
 		HealthCheckProxy: healthCheckProxyConfig{
 			ListenAddr: ":8069",
@@ -186,17 +188,19 @@ func rootCmdRunE(cmd *cobra.Command, args []string) error {
 		RealHealthCheckScheme: cfg.BackendHealthCheck.Scheme,
 	})
 
+	hClient := &http.Client{
+		Timeout: cfg.BackendHealthCheck.HTTPTimeout,
+	}
+
 	if cfg.BackendHealthCheck.TLSInsecureSkipVerify {
-		hClient := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
+		hClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
 			},
 		}
-
-		proxy.SetHTTPClient(hClient)
 	}
+
+	proxy.SetHTTPClient(hClient)
 
 	mux := http.NewServeMux()
 	mux.Handle("/delth/health", http.HandlerFunc(proxy.HealthHandler))
