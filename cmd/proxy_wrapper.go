@@ -14,6 +14,11 @@ type healthCheckProxy struct {
 	shuttingDown bool
 	ctx          context.Context
 	log          *slog.Logger
+	hClient      httpDoer
+}
+
+type httpDoer interface {
+	Do(*http.Request) (*http.Response, error)
 }
 
 type HealthCheckProxyOptions struct {
@@ -28,6 +33,18 @@ func NewHealthCheckProxy(ctx context.Context, opts HealthCheckProxyOptions) *hea
 		ctx:  ctx,
 		log:  slog.Default().With("component", "http-server"),
 	}
+}
+
+func (h *healthCheckProxy) SetHTTPClient(c httpDoer) {
+	h.hClient = c
+}
+
+func (h *healthCheckProxy) getHTTPClient() httpDoer {
+	if h.hClient == nil {
+		return http.DefaultClient
+	}
+
+	return h.hClient
 }
 
 func (h *healthCheckProxy) InitiateShutdown() {
@@ -68,7 +85,7 @@ func (h *healthCheckProxy) HealthHandler(w http.ResponseWriter, r *http.Request)
 
 	req.URL.RawQuery = forwadedQueryP.Encode()
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := h.getHTTPClient().Do(req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadGateway)
 		log.Error("performing HTTP request to backend", "error", err)
