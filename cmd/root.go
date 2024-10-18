@@ -33,6 +33,7 @@ package cmd
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"net"
@@ -121,9 +122,10 @@ type healthCheckProxyConfig struct {
 }
 
 type backendHealthCheckConfig struct {
-	Path   string `mapstructure:"path" validate:"required"`
-	Port   int    `mapstructure:"port" validate:"required"`
-	Scheme string `mapstructure:"scheme"`
+	Path                  string `mapstructure:"path" validate:"required"`
+	Port                  int    `mapstructure:"port" validate:"required"`
+	Scheme                string `mapstructure:"scheme"`
+	TLSInsecureSkipVerify bool   `mapstructure:"tls-insecure-skip-verify"`
 }
 
 type commandExecConfig struct {
@@ -183,6 +185,18 @@ func rootCmdRunE(cmd *cobra.Command, args []string) error {
 		RealHealthCheckPort:   cfg.BackendHealthCheck.Port,
 		RealHealthCheckScheme: cfg.BackendHealthCheck.Scheme,
 	})
+
+	if cfg.BackendHealthCheck.TLSInsecureSkipVerify {
+		hClient := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		}
+
+		proxy.SetHTTPClient(hClient)
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/delth/health", http.HandlerFunc(proxy.HealthHandler))
