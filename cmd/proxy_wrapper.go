@@ -70,7 +70,7 @@ func (h *healthCheckProxy) HealthHandler(w http.ResponseWriter, r *http.Request)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		w.WriteHeader(http.StatusServiceUnavailable)
+		w.WriteHeader(http.StatusBadGateway)
 		log.Error("performing HTTP request to backend", "error", err)
 		return
 	}
