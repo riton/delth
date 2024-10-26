@@ -144,3 +144,7 @@ DELTH_BACKEND_HEALTHCHECK_TIMEOUT: '30s'
 DELTH_CMD_EXEC_SHUTDOWN_DELAY: '30s'
 DELTH_HEALTHCHECK_PROXY_LISTEN_ADDR: ':8069'
 ```
+
+## Credits
+
+* The Go Gopher mascot was created by Renee French and is licensed under the [Creative Commons 4.0 Attribution License](https://creativecommons.org/licenses/by/4.0/).
