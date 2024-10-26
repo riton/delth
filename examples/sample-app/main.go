@@ -3,11 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"os"
+	"time"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	time.Sleep(time.Duration(rand.IntN(10)) * time.Second)
 	w.WriteHeader(http.StatusOK)
 
 	for _, k := range os.Environ() {
@@ -20,7 +23,6 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
 	mux := http.NewServeMux()
 	mux.Handle("/health", http.HandlerFunc(healthHandler))
 	mux.Handle("/", http.HandlerFunc(handler))

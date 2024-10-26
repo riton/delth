@@ -2,8 +2,47 @@
 version: "3.7"
 
 services:
-  backend:
-    image: 'localhost:5000/delth/sample-app-print-env:latest'
+  backend_without_delth:
+    image: 'localhost:5000/delth/sample-app-print-env/without-delth:latest'
+    healthcheck:
+      test: 'curl -f http://localhost/health'
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+    networks:
+      - traefik-main
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        monitor: 10s
+        delay: 30s
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 128M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.network=traefik-main"
+        - "traefik.http.routers.nodelth-app.rule=Host(`app-without-delth.127.0.0.1.nip.io`)"
+        - "traefik.http.routers.nodelth-app.entrypoints=web"
+        - "traefik.http.services.nodelth-app.loadbalancer.server.port=80"
+        - "traefik.http.services.nodelth-app.loadbalancer.healthcheck.port=80"
+        - "traefik.http.services.nodelth-app.loadbalancer.healthcheck.path=/health"
+        - "traefik.http.services.nodelth-app.loadbalancer.healthcheck.interval=5s"
+        - "traefik.http.services.nodelth-app.loadbalancer.healthcheck.timeout=2s"
+        - "traefik.http.services.nodelth-app.loadbalancer.healthcheck.scheme=http"
+        - "traefik.http.services.nodelth-app.loadbalancer.healthcheck.status=200"
+
+  backend_with_delth:
+    image: 'localhost:5000/delth/sample-app-print-env/with-delth:latest'
     healthcheck:
       test: 'curl -f http://localhost:8069/delth/health?delth.ignoreShuttingDownState=1'
       interval: 10s
@@ -38,15 +77,15 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.network=traefik-main"
-        - "traefik.http.routers.myapp.rule=Host(`app.127.0.0.1.nip.io`)"
-        - "traefik.http.routers.myapp.entrypoints=web"
-        - "traefik.http.services.myapp.loadbalancer.server.port=80"
-        - "traefik.http.services.myapp.loadbalancer.healthcheck.port=8069"
-        - "traefik.http.services.myapp.loadbalancer.healthcheck.path=/delth/health"
-        - "traefik.http.services.myapp.loadbalancer.healthcheck.interval=5s"
-        - "traefik.http.services.myapp.loadbalancer.healthcheck.timeout=2s"
-        - "traefik.http.services.myapp.loadbalancer.healthcheck.scheme=http"
-        - "traefik.http.services.myapp.loadbalancer.healthcheck.status=200"
+        - "traefik.http.routers.delth-app.rule=Host(`app-with-delth.127.0.0.1.nip.io`)"
+        - "traefik.http.routers.delth-app.entrypoints=web"
+        - "traefik.http.services.delth-app.loadbalancer.server.port=80"
+        - "traefik.http.services.delth-app.loadbalancer.healthcheck.port=8069"
+        - "traefik.http.services.delth-app.loadbalancer.healthcheck.path=/delth/health"
+        - "traefik.http.services.delth-app.loadbalancer.healthcheck.interval=5s"
+        - "traefik.http.services.delth-app.loadbalancer.healthcheck.timeout=2s"
+        - "traefik.http.services.delth-app.loadbalancer.healthcheck.scheme=http"
+        - "traefik.http.services.delth-app.loadbalancer.healthcheck.status=200"
 
 networks:
   traefik-main:

@@ -1,0 +1,16 @@
+FROM golang:1 AS builder
+
+COPY . /src
+
+RUN cd /src && \
+CGO_ENABLED=0 go build -a -ldflags "-s -w -extldflags '-static'" -o app .
+
+FROM alpine:latest
+
+COPY --from=builder --chown=root:root --chmod=0755 /src/app /usr/bin/app
+
+RUN apk add --no-cache -U tini curl
+
+ENTRYPOINT ["/sbin/tini", "--"]
+
+CMD ["/usr/bin/app"]
