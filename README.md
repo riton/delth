@@ -1,5 +1,7 @@
 # Delth
 
+![delth logo](doc/logo.png)
+
 ## Description
 
 `delth` stands for `delay health`.
