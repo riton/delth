@@ -4,7 +4,7 @@
 
 `delth` stands for `delay health`.
 
-`delth` tries to solve a simple problem that I'm facing usually encountering when dealing with _container orchestration_.
+`delth` tries to solve a simple problem that I'm encountering when dealing with _container orchestration_.
 
 In an infrastructure with an external _Load Balancer_ (`traefik`, etc...) and an _orchestrator_ (`docker swarm`, etc...), when rolling out new releases or updates, I've encountered scenarios where the _Load Balancer_ can still route requests to a container that is being shut down by the orchestrator.
 
